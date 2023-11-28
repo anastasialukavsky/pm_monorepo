@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import visibleIcon from '../../../../public/svg/visible_input.svg';
-import hiddenIcon from '../../../../public/svg/hidden_input.svg';
+import visibleIcon from '/public/assets/visible_input.svg';
+import hiddenIcon from '/public/assets/hidden_input.svg';
 import { useShowPassword } from '../../../app/_hooks/index';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -70,13 +70,13 @@ export default function Page() {
     }
   };
 
-  useEffect(() => {
-    // checkPasswordValidity(password);
-    // for (let err in errors) {
-    //   // if(err) {
-    //   // }
-    // }
-  }, [errors]);
+  // useEffect(() => {
+  //   // checkPasswordValidity(password);
+  //   // for (let err in errors) {
+  //   //   // if(err) {
+  //   //   // }
+  //   // }
+  // }, [errors]);
 
   console.log({ errors });
   useEffect(() => {
@@ -141,80 +141,80 @@ export default function Page() {
 
   return (
     <section
-      id="signup-section"
-      className="bg-pink-100 w-[100vw] h-[100vh] flex text-slate-700"
+      id='signup-section'
+      className='bg-pink-100 w-[100vw] h-[100vh] flex text-slate-700'
     >
-      <div id="form-wrapper" className="self-center mx-auto  h-fit w-[35vw]">
-        <header className="text-center text-3xl font-bold">
+      <div id='form-wrapper' className='self-center mx-auto  h-fit w-[35vw]'>
+        <header className='text-center text-3xl font-bold'>
           <h1>Join</h1>
         </header>
         <form
-          action="submit"
-          className="flex flex-col"
+          action='submit'
+          className='flex flex-col'
           onSubmit={handleSubmit(submitData)}
         >
-          <Label htmlFor="firstName" label="firstName" />
+          <Label htmlFor='firstName' label='firstName' />
           <Input
-            type="text"
-            autoComplete="firstName"
+            type='text'
+            autoComplete='firstName'
             placeholder={errors.firstName?.message || ''}
             register={register}
-            fieldName="firstName"
+            fieldName='firstName'
           />
-          <Label htmlFor="lastName" label="lastName" />
+          <Label htmlFor='lastName' label='lastName' />
           <Input
-            type="text"
-            autoComplete="lastName"
+            type='text'
+            autoComplete='lastName'
             placeholder={errors.lastName?.message || ''}
             register={register}
-            fieldName="lastName"
+            fieldName='lastName'
           />
-          <Label htmlFor="email" label="email" />
+          <Label htmlFor='email' label='email' />
           <Input
-            type="text"
-            autoComplete="email"
+            type='text'
+            autoComplete='email'
             placeholder={errors.email?.message || ''}
             register={register}
-            fieldName="email"
+            fieldName='email'
             onBlur={(e) => emailChecker(e.target.value)}
           />
 
-          <div className="w-full flex flex-col ">
-            <Label htmlFor="password" label="password" />
+          <div className='w-full flex flex-col '>
+            <Label htmlFor='password' label='password' />
             <Input
               type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
+              autoComplete='current-password'
               placeholder={errors.password?.message || ''}
               register={register}
-              fieldName="password"
+              fieldName='password'
               onBlur={(e) => checkPasswordValidity(e.target.value)}
             />
             <Image
               src={showPassword ? visibleIcon : hiddenIcon}
               width={15}
               height={15}
-              alt="eye"
+              alt='eye'
               onClick={togglePasswordVisibility}
-              className="cursor-pointer self-end -translate-y-5 -translate-x-1"
+              className='cursor-pointer self-end -translate-y-5 -translate-x-1'
             />
-            <Label htmlFor="confirmPassword" label="confirmPassword" />
+            <Label htmlFor='confirmPassword' label='confirmPassword' />
             <Input
               type={showConfirmPassword ? 'text' : 'password'}
-              autoComplete="current-password"
+              autoComplete='current-password'
               placeholder={errors.confirmPassword?.message || ''}
               register={register}
-              fieldName="confirmPassword"
+              fieldName='confirmPassword'
             />
             <Image
               src={showConfirmPassword ? visibleIcon : hiddenIcon}
               width={15}
               height={15}
-              alt="eye"
+              alt='eye'
               onClick={toggleConfirmPasswordVisibiity}
-              className="cursor-pointer self-end -translate-y-5 -translate-x-1"
+              className='cursor-pointer self-end -translate-y-5 -translate-x-1'
             />
           </div>
-          <button className="mt-3 w-full h-fit border border-black font-medium">
+          <button className='mt-3 w-full h-fit border border-black font-medium'>
             login
           </button>
         </form>
