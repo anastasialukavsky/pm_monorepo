@@ -78,6 +78,11 @@ export class AuthService {
       return {
         id: user.id,
         tokens,
+        user: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
       };
     } catch (err) {
       throw err;

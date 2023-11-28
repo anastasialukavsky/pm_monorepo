@@ -54,14 +54,22 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() dto: LoginDto, @Res() res: Response) {
-    const { id, tokens } = await this.authService.login(dto);
+    const {
+      id,
+      tokens,
+      user: { firstName, lastName, email },
+    } = await this.authService.login(dto);
 
     res
       .cookie('access_token', tokens.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development', //* set to true in production for HTTPS
       })
-      .send({ message: 'User successfully logged in', userId: id });
+      .send({
+        message: 'User successfully logged in',
+        userId: id,
+        user: { firstName, lastName, email },
+      });
 
     return { id };
   }
