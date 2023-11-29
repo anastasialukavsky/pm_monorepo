@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Headers,
   Post,
   Req,
   Res,
@@ -105,6 +106,16 @@ export class AuthController {
           .status(HttpStatus.NOT_FOUND)
           .json({ message: emailLookup.message, status: emailLookup.status });
       }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  @Get('authentication-check')
+  async getUserAuthStatus(@Headers() headers: Record<string, string>) {
+    try {
+      const isAuthenticated = await this.authService.checkUserAuth(headers);
+      return { authenticated: isAuthenticated };
     } catch (err) {
       throw err;
     }
