@@ -255,23 +255,24 @@ export class AuthService {
   }
 
   async checkUserAuth(headers: Record<string, string>): Promise<boolean> {
-    // Extract the token from headers or use your preferred method
-    const token = headers.authorization; // replace with your actual header key
+    const token = headers.authorization;
 
     if (!token) {
       return false; // No token means not authenticated
     }
 
-    // Add your authentication logic here (verify the token, check expiration, etc.)
-    // For example, you might use a library like jsonwebtoken
     try {
+      const SECRET = this.config.get('JWT_SECRET');
+      const REFRESH_SECRET = this.config.get('REFRESH_JWT_SECRET');
+      const decodedToken = this.jwt.verify(token, { secret: SECRET });
 
-      const decodedToken = argon.verify(token, 'YOUR_SECRET_KEY');
-
-      // If the token is successfully verified, the user is authenticated
       return true;
+      // const decodedToken = argon.verify(token, SECRET);
+
+      // return true;
     } catch (error) {
       // Token verification failed, user is not authenticated
+      // throw error;
       return false;
     }
   }
