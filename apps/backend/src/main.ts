@@ -8,20 +8,21 @@ import {
 import * as session from 'express-session';
 import * as passport from 'passport';
 import * as cookieParser from 'cookie-parser';
+// import * as dotenv from 'dotenv';
 
 async function bootstrap() {
   const app = (await NestFactory.create(AppModule, {
     bufferLogs: true,
     abortOnError: false,
   }).catch(console.error)) as INestApplication;
-
+  // dotenv.config();
   const SESSION_SECRET = process.env.SESSION_SECRET;
 
   if (!SESSION_SECRET)
     throw new NotFoundException('Cannot extract session secret');
   app.enableCors({
     origin: 'http://localhost:3000',
-    credentials: true, // Allow credentials (cookies, headers, etc.)
+    credentials: true,
   });
   app.use(
     session({
