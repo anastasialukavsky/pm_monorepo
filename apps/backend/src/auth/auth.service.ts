@@ -8,7 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthDto, LoginDto } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtVerifyOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Tokens } from './types/index';
 import { exclude } from 'utils.exlude-pass';
@@ -256,23 +256,27 @@ export class AuthService {
 
   async checkUserAuth(headers: Record<string, string>): Promise<boolean> {
     const token = headers.authorization;
+    // const SECRET = 'hellosecret';
 
     if (!token) {
-      return false; // No token means not authenticated
+      return false;
     }
-
+    const extractedToken = token.split(' ')[1];
+    // console.log({ extractedToken });
+    // console.log({ token });
+    // console.log({ headers });
     try {
       const SECRET = this.config.get('JWT_SECRET');
-      const REFRESH_SECRET = this.config.get('REFRESH_JWT_SECRET');
-      const decodedToken = this.jwt.verify(token, { secret: SECRET });
+      const verifyOptions: JwtVerifyOptions = {
+        secret: SECRET,
+      };
+      // console.log('secret', SECRET);
 
+      const decodedToken = this.jwt.verify(extractedToken, verifyOptions);
+      // console.log({ decodedToken });
       return true;
-      // const decodedToken = argon.verify(token, SECRET);
-
-      // return true;
     } catch (error) {
-      // Token verification failed, user is not authenticated
-      // throw error;
+      console.log(error);
       return false;
     }
   }
