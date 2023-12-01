@@ -112,9 +112,11 @@ export class AuthController {
   }
 
   @Get('authentication-check')
-  async getUserAuthStatus(@Headers() headers: Record<string, string>) {
+  async getUserAuthStatus(@Headers('authorization') authorization: string) {
     try {
-      const isAuthenticated = await this.authService.checkUserAuth(headers);
+      const isAuthenticated = await this.authService.checkUserAuth({
+        authorization,
+      });
       return { authenticated: isAuthenticated };
     } catch (err) {
       throw err;
