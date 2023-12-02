@@ -67,9 +67,12 @@ export class AuthService {
 
       if (!comparePassword)
         throw new ForbiddenException('Access denied: Incorrect password');
-
-      const tokens = await this.signToken(user.id, user.email);
-      await this.updateRtHash(user.id, tokens.refresh_token);
+      const [token, refreshToken] = await Promise.all([
+        await this.signToken(user.id, user.email),
+        await this.updateRtHash(user.id, user.hashedRt),
+      ]);
+      // const tokens = await this.signToken(user.id, user.email);
+      // await this.updateRtHash(user.id, tokens.refresh_token);
 
       // this.setAccessTokenCookie(res, tokens.access_token);
 
@@ -77,7 +80,8 @@ export class AuthService {
 
       return {
         id: user.id,
-        tokens,
+        token,
+        refreshToken,
         user: {
           firstName: user.firstName,
           lastName: user.lastName,
@@ -204,12 +208,12 @@ export class AuthService {
 
     const [token, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
-        expiresIn: 60 * 15,
+        expiresIn: 60 * 1, //15
         secret: SECRET,
       }),
 
       this.jwt.signAsync(payload, {
-        expiresIn: 60 * 60 * 24 * 7,
+        expiresIn: 60 * 60 * 24 * 7, //keep it to a day?
         secret: REFRESH_SECRET,
       }),
     ]);
@@ -255,28 +259,48 @@ export class AuthService {
   }
 
   async checkUserAuth(headers: Record<string, string>): Promise<boolean> {
-    const token = headers.authorization;
-    // const SECRET = 'hellosecret';
-
+    const token = headers.cookie['access_token'];
+    // console.log(headers);
     if (!token) {
       return false;
     }
-    const extractedToken = token.split(' ')[1];
-    // console.log({ extractedToken });
-    // console.log({ token });
-    // console.log({ headers });
+    console.log({ headers });
+    // const extractedToken = token.split(' ')[1];
+
     try {
       const SECRET = this.config.get('JWT_SECRET');
       const verifyOptions: JwtVerifyOptions = {
         secret: SECRET,
       };
-      // console.log('secret', SECRET);
 
-      const decodedToken = this.jwt.verify(extractedToken, verifyOptions);
-      // console.log({ decodedToken });
+      const decodedToken = this.jwt.verify(token, verifyOptions);
+
       return true;
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
+
+      if (err.name === 'TokenExpiredError') {
+        console.log('Token expired');
+        const rt = headers.cookie['refresh_token'];
+        if (rt) {
+          const user = await this.prisma.user.findFirst({
+            where: {
+              id: headers.cookie['userId'],
+            },
+          });
+
+          try {
+            if (user.hashedRt !== rt) {
+              throw new Error('Access denied, rt do not match');
+            }
+
+            return true;
+          } catch (refreshErr) {
+            console.log({ refreshErr });
+          }
+        }
+      }
+
       return false;
     }
   }
