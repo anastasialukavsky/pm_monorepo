@@ -57,14 +57,23 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Res() res: Response) {
     const {
       id,
-      tokens,
+      token,
+      refreshToken,
       user: { firstName, lastName, email },
     } = await this.authService.login(dto);
 
     res
-      .cookie('access_token', tokens.access_token, {
+      .cookie('access_token', token.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development', //* set to true in production for HTTPS
+      })
+      .cookie('refresh_token', refreshToken.hashedRt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'development',
+      })
+      .cookie('userId', id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'development',
       })
       .send({
         message: 'User successfully logged in',
@@ -112,10 +121,15 @@ export class AuthController {
   }
 
   @Get('authentication-check')
-  async getUserAuthStatus(@Headers('authorization') authorization: string) {
+  async getUserAuthStatus(
+    @Req() request: Request,
+    // @Headers('authorization') authorization: string,
+    // @Headers('cookie') cookie: string,
+  ) {
     try {
       const isAuthenticated = await this.authService.checkUserAuth({
-        authorization,
+        // authorization,
+        cookie: request.cookies,
       });
       return { authenticated: isAuthenticated };
     } catch (err) {
