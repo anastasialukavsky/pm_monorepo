@@ -39,13 +39,30 @@ export class AuthController {
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   async signup(@Body() dto: AuthDto, @Res() res: Response) {
-    const { id, tokens } = await this.authService.signup(dto);
+    const {
+      id,
+      token,
+      refreshToken,
+      user: { firstName, lastName, email },
+    } = await this.authService.signup(dto);
     res
-      .cookie('access_token', tokens.access_token, {
+      .cookie('access_token', token.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development', //* set to true in production for HTTPS
       })
-      .send({ message: 'User successfully signed up', userId: id });
+      .cookie('refresh_token', refreshToken.hashedRt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'development',
+      })
+      .cookie('userId', id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'development', //* set to true in production for HTTPS
+      })
+      .send({
+        message: 'User successfully signed up',
+        userId: id,
+        user: { firstName, lastName, email },
+      });
 
     return { id };
     // return this.authService.signup(dto);
