@@ -10,7 +10,7 @@ import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtService, JwtVerifyOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Tokens } from './types/index';
+// import { Tokens } from './types/index';
 import { exclude } from 'utils.exlude-pass';
 import { UserService } from 'src/user/user.service';
 import { User } from '@prisma/client';
@@ -67,21 +67,16 @@ export class AuthService {
 
       if (!comparePassword)
         throw new ForbiddenException('Access denied: Incorrect password');
-      const [token, refreshToken] = await Promise.all([
-        await this.signToken(user.id, user.email),
-        await this.updateRtHash(user.id, user.hashedRt),
-      ]);
-      // const tokens = await this.signToken(user.id, user.email);
-      // await this.updateRtHash(user.id, tokens.refresh_token);
 
-      // this.setAccessTokenCookie(res, tokens.access_token);
+      const tokens = await this.signToken(user.id, user.email);
+      await this.updateRtHash(user.id, tokens.refresh_token);
 
       console.log('Login process completed');
 
       return {
         id: user.id,
-        token,
-        refreshToken,
+        token: tokens.access_token,
+        refreshToken: tokens.refresh_token,
         user: {
           firstName: user.firstName,
           lastName: user.lastName,
@@ -90,26 +85,12 @@ export class AuthService {
       };
     } catch (err) {
       throw err;
-      // return err.message;
     }
   }
 
-  // private setAccessTokenCookie(res: Response, token: string): void {
-  //   console.log('hello');
-  //   res
-  //     .cookie('access_token', token, {
-  //       httpOnly: true,
-  //       secure: process.env.NODE_ENV === 'production',
-  //     })
-  //     .send({ status: 'ok' });
-  //   console.log('cookie', res.cookie);
-  //   console.log('res', res);
-
-  //   console.log('goodbye');
-  // }
-
   async signup(dto: AuthDto) {
     const hash = await argon.hash(dto.password);
+
     try {
       const user = await this.prisma.user.create({
         data: {
@@ -123,11 +104,15 @@ export class AuthService {
       const tokens = await this.signToken(user.id, user.email);
       await this.updateRtHash(user.id, tokens.refresh_token);
 
-      // this.setAccessTokenCookie(res, tokens.access_token);
-
       return {
         id: user.id,
-        tokens,
+        token: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        user: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
       };
     } catch (err) {
       if (err instanceof PrismaClientKnownRequestError) {
@@ -140,17 +125,21 @@ export class AuthService {
 
   async updateRtHash(userId: string, rt: string) {
     try {
-      const hash = await argon.hash(rt);
-      const updateHash = await this.prisma.user.update({
-        where: {
-          id: userId,
-        },
-        data: {
-          hashedRt: hash,
-        },
-      });
+      if (rt) {
+        const hash = await argon.hash(rt);
+        const updateHash = await this.prisma.user.update({
+          where: {
+            id: userId,
+          },
+          data: {
+            hashedRt: hash,
+          },
+        });
 
-      return updateHash;
+        return updateHash;
+      } else {
+        throw new Error('Refresh token is null or undefined');
+      }
     } catch (err) {
       throw err;
     }
@@ -198,7 +187,10 @@ export class AuthService {
     return tokens;
   }
 
-  async signToken(userId: string, email: string): Promise<Tokens> {
+  async signToken(
+    userId: string,
+    email: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const payload = {
       sub: userId,
       email,
@@ -273,6 +265,7 @@ export class AuthService {
         secret: SECRET,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const decodedToken = this.jwt.verify(token, verifyOptions);
 
       return true;
