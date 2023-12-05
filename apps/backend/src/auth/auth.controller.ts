@@ -46,11 +46,11 @@ export class AuthController {
       user: { firstName, lastName, email },
     } = await this.authService.signup(dto);
     res
-      .cookie('access_token', token.access_token, {
+      .cookie('access_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development', //* set to true in production for HTTPS
       })
-      .cookie('refresh_token', refreshToken.hashedRt, {
+      .cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development',
       })
@@ -80,11 +80,11 @@ export class AuthController {
     } = await this.authService.login(dto);
 
     res
-      .cookie('access_token', token.access_token, {
+      .cookie('access_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development', //* set to true in production for HTTPS
       })
-      .cookie('refresh_token', refreshToken.hashedRt, {
+      .cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development',
       })
