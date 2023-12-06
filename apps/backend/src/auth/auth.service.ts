@@ -69,7 +69,7 @@ export class AuthService {
         throw new ForbiddenException('Access denied: Incorrect password');
 
       const tokens = await this.signToken(user.id, user.email);
-      await this.updateRtHash(user.id, tokens.refresh_token);
+      // await this.updateRtHash(user.id, tokens.refresh_token);
 
       console.log('Login process completed');
 
@@ -102,7 +102,7 @@ export class AuthService {
       });
 
       const tokens = await this.signToken(user.id, user.email);
-      await this.updateRtHash(user.id, tokens.refresh_token);
+      // await this.updateRtHash(user.id, tokens.refresh_token);
 
       return {
         id: user.id,
@@ -123,27 +123,27 @@ export class AuthService {
     }
   }
 
-  async updateRtHash(userId: string, rt: string) {
-    try {
-      if (rt) {
-        const hash = await argon.hash(rt);
-        const updateHash = await this.prisma.user.update({
-          where: {
-            id: userId,
-          },
-          data: {
-            hashedRt: hash,
-          },
-        });
+  // async updateRtHash(userId: string, rt: string) {
+  //   try {
+  //     if (rt) {
+  //       const hash = await argon.hash(rt);
+  //       const updateHash = await this.prisma.user.update({
+  //         where: {
+  //           id: userId,
+  //         },
+  //         data: {
+  //           hashedRt: hash,
+  //         },
+  //       });
 
-        return updateHash;
-      } else {
-        throw new Error('Refresh token is null or undefined');
-      }
-    } catch (err) {
-      throw err;
-    }
-  }
+  //       return updateHash;
+  //     } else {
+  //       throw new Error('Refresh token is null or undefined');
+  //     }
+  //   } catch (err) {
+  //     throw err;
+  //   }
+  // }
 
   async logout(userId: string) {
     try {
@@ -183,9 +183,11 @@ export class AuthService {
     }
 
     const tokens = await this.signToken(userId, user.email);
-    await this.updateRtHash(user.id, tokens.refresh_token);
+    // await this.updateRtHash(user.id, tokens.refresh_token);
     return tokens;
   }
+
+  //!write Redis token pair storage logic helper func (replacement for updateRtHash())
 
   async signToken(
     userId: string,
@@ -275,6 +277,7 @@ export class AuthService {
       if (err.name === 'TokenExpiredError') {
         console.log('Token expired');
         const rt = headers.cookie['refresh_token'];
+        const hash = await argon.hash(rt);
         if (rt) {
           const user = await this.prisma.user.findFirst({
             where: {
@@ -283,7 +286,7 @@ export class AuthService {
           });
 
           try {
-            if (user.hashedRt !== rt) {
+            if (user.hashedRt !== hash) {
               throw new Error('Access denied, rt do not match');
             }
 
