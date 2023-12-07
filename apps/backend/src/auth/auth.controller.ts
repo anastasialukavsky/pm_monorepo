@@ -25,6 +25,12 @@ import { Response } from 'express';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Post('save-to-redis')
+  async saveToRediss(@Body() data: { key: string; value: string }) {
+    const { key, value } = data;
+    await this.authService.getCachedTokens(key, value);
+  }
+
   @UseGuards(GoogleGuard)
   @Get('google')
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -74,17 +80,17 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Res() res: Response) {
     const {
       id,
-      token,
-      refreshToken,
+      access_token,
+      refresh_token,
       user: { firstName, lastName, email },
     } = await this.authService.login(dto);
 
     res
-      .cookie('access_token', token, {
+      .cookie('access_token', access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development', //* set to true in production for HTTPS
       })
-      .cookie('refresh_token', refreshToken, {
+      .cookie('refresh_token', refresh_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development',
       })
