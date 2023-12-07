@@ -17,6 +17,13 @@ import { User } from '@prisma/client';
 import { Request } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
+import { Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+// import { CACHE_MANAGER } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+// import { cachedDataVersionTag } from 'v8';
+import { Tokens } from './types/index';
+// import { HttpService } from '@nestjs/axios';
 
 @Injectable({})
 export class AuthService {
@@ -25,6 +32,8 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheService: Cache,
+    // private readonly httpService: HttpService,
   ) {}
 
   googleLogin(
@@ -68,15 +77,25 @@ export class AuthService {
       if (!comparePassword)
         throw new ForbiddenException('Access denied: Incorrect password');
 
-      const tokens = await this.signToken(user.id, user.email);
+      // const tokens = await this.signToken(user.id, user.email);
+      // const cacheTokens = await this.cacheService.set(user.id, tokens);
+
+      // const cachedData = await this.cacheService.get(user.id);
+
+      // if (cachedData) {
+      //   console.log({ cachedData });
+      // }
+      // console.log(cacheTokens);
+      const tokens = await this.getCachedTokens(user.id, user.email);
+      // console.log({ test });
       // await this.updateRtHash(user.id, tokens.refresh_token);
 
       console.log('Login process completed');
 
       return {
         id: user.id,
-        token: tokens.access_token,
-        refreshToken: tokens.refresh_token,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
         user: {
           firstName: user.firstName,
           lastName: user.lastName,
@@ -189,6 +208,63 @@ export class AuthService {
 
   //!write Redis token pair storage logic helper func (replacement for updateRtHash())
 
+  async getCachedTokens(userId: string, email: string) {
+    const tokens = await this.signToken(userId, email);
+    try {
+      const strTokens = JSON.stringify(tokens);
+      await this.cacheService.set(userId, strTokens);
+      const cachedStrTokens: string | null =
+        await this.cacheService.get(userId);
+
+      if (cachedStrTokens) {
+        const cachedTokens: Tokens = JSON.parse(cachedStrTokens);
+        console.log({ cachedTokens });
+        return cachedTokens;
+      } else {
+        throw new Error('No tokens found in cache');
+      }
+
+      // return {
+      //   access_token: cachedTokens.access_token,
+      //   refresh_token: cachedTokens.refresh_token,
+      // };
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  private isAccessTokenValid(access_token: string): boolean {
+    const decodedAT = this.jwt.decode(access_token) as { exp: number };
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    const tokenExpiration = decodedAT.exp;
+
+    return tokenExpiration > currentTime;
+  }
+
+  private rotateTokens() {}
+  // async getCachedTokens(userId: string, email: string) {
+  //   // this.httpService.axiosRef.
+  //   // await this.cacheManager.set(key, value);
+  //   const tokens = await this.signToken(userId, email);
+  //   try {
+  //     await this.cacheService.set(userId, 'hello user');
+  //     const cachedTokens: Tokens = await this.cacheService.get(userId);
+
+  //     if (cachedTokens) {
+  //       console.log({ cachedTokens });
+  //     }
+
+  //     return cachedTokens;
+  //     // return {
+  //     //   access_token: cachedTokens.access_token,
+  //     //   refresh_token: cachedTokens.refresh_token,
+  //     // };
+  //   } catch (err) {
+  //     throw err;
+  //   }
+  // }
+
   async signToken(
     userId: string,
     email: string,
@@ -277,7 +353,7 @@ export class AuthService {
       if (err.name === 'TokenExpiredError') {
         console.log('Token expired');
         const rt = headers.cookie['refresh_token'];
-        const hash = await argon.hash(rt);
+        // const hash = await argon.hash(rt);
         if (rt) {
           const user = await this.prisma.user.findFirst({
             where: {
@@ -286,7 +362,7 @@ export class AuthService {
           });
 
           try {
-            if (user.hashedRt !== hash) {
+            if (user.hashedRt !== rt) {
               throw new Error('Access denied, rt do not match');
             }
 
