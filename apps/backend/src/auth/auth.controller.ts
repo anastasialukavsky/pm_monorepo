@@ -16,7 +16,7 @@ import { AuthDto, LoginDto } from './dto';
 import { Request } from 'express';
 import { GoogleGuard, JwtGuard, LocalAuthGuard, RtGuard } from './guard';
 import { GetUser } from './decorators';
-import { GetUserId } from './decorators/get-user-id.decorator';
+// import { GetUserId } from './decorators/get-user-id.decorator';
 
 import { Response } from 'express';
 
@@ -114,15 +114,15 @@ export class AuthController {
     return this.authService.logout(userId);
   }
 
-  @UseGuards(RtGuard)
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  refreshToken(
-    @GetUser('hashedRt') refreshToken: string,
-    @GetUserId() userId: string,
-  ) {
-    return this.authService.refreshToken(userId, refreshToken);
-  }
+  // @UseGuards(RtGuard)
+  // @Post('refresh')
+  // @HttpCode(HttpStatus.OK)
+  // refreshToken(
+  //   @GetUser('hashedRt') refreshToken: string,
+  //   @GetUserId() userId: string,
+  // ) {
+  //   return this.authService.refreshToken(userId, refreshToken);
+  // }
 
   @Get('verify-email/:email')
   async getUserEmail(@Param('email') email: string, @Res() res: Response) {
