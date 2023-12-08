@@ -86,9 +86,9 @@ export class AuthService {
       //   console.log({ cachedData });
       // }
       // console.log(cacheTokens);
-      const tokens = await this.getCachedTokens(user.id, user.email);
-      // console.log({ test });
-      // await this.updateRtHash(user.id, tokens.refresh_token);
+      const tokens = await this.signToken(user.id, user.email);
+      //saving at and rt into  a cache storage forfuture use
+      await this.cacheService.set(user.id, tokens);
 
       console.log('Login process completed');
 
@@ -121,7 +121,8 @@ export class AuthService {
       });
 
       const tokens = await this.signToken(user.id, user.email);
-      // await this.updateRtHash(user.id, tokens.refresh_token);
+      //saving at and rt into  a cache storage forfuture use
+      await this.cacheService.set(user.id, tokens);
 
       return {
         id: user.id,
@@ -141,28 +142,6 @@ export class AuthService {
       throw err;
     }
   }
-
-  // async updateRtHash(userId: string, rt: string) {
-  //   try {
-  //     if (rt) {
-  //       const hash = await argon.hash(rt);
-  //       const updateHash = await this.prisma.user.update({
-  //         where: {
-  //           id: userId,
-  //         },
-  //         data: {
-  //           hashedRt: hash,
-  //         },
-  //       });
-
-  //       return updateHash;
-  //     } else {
-  //       throw new Error('Refresh token is null or undefined');
-  //     }
-  //   } catch (err) {
-  //     throw err;
-  //   }
-  // }
 
   async logout(userId: string) {
     try {
@@ -206,8 +185,6 @@ export class AuthService {
     return tokens;
   }
 
-  //!write Redis token pair storage logic helper func (replacement for updateRtHash())
-
   async getCachedTokens(userId: string, email: string) {
     const tokens = await this.signToken(userId, email);
     try {
@@ -243,27 +220,6 @@ export class AuthService {
   }
 
   private rotateTokens() {}
-  // async getCachedTokens(userId: string, email: string) {
-  //   // this.httpService.axiosRef.
-  //   // await this.cacheManager.set(key, value);
-  //   const tokens = await this.signToken(userId, email);
-  //   try {
-  //     await this.cacheService.set(userId, 'hello user');
-  //     const cachedTokens: Tokens = await this.cacheService.get(userId);
-
-  //     if (cachedTokens) {
-  //       console.log({ cachedTokens });
-  //     }
-
-  //     return cachedTokens;
-  //     // return {
-  //     //   access_token: cachedTokens.access_token,
-  //     //   refresh_token: cachedTokens.refresh_token,
-  //     // };
-  //   } catch (err) {
-  //     throw err;
-  //   }
-  // }
 
   async signToken(
     userId: string,
