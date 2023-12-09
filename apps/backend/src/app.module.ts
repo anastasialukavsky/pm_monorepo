@@ -16,6 +16,9 @@ import * as redisStore from 'cache-manager-redis-store';
 import { CacheModule } from '@nestjs/cache-manager';
 // import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthService } from './auth/auth.service';
+import { createClient } from 'redis';
 
 @Module({
   imports: [
@@ -27,7 +30,9 @@ import { AppService } from './app.service';
       store: redisStore,
       host: process.env.REDIS_HOST,
       port: process.env.REDIS_PORT,
+      client: createClient(),
     }),
+    JwtModule.register({}),
     AuthModule,
     UserModule,
     PrismaModule,
@@ -35,7 +40,7 @@ import { AppService } from './app.service';
     ProjectModule,
     TaskModule,
   ],
-  providers: [AppService],
+  providers: [AppService, AuthService],
   // controllers: [ProjectController],
 })
 export class AppModule implements NestModule {
