@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  // UnauthorizedException,
   // Res,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -23,6 +24,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 // import { cachedDataVersionTag } from 'v8';
 import { Tokens } from './types/index';
+import { createClient } from 'redis';
 // import { HttpService } from '@nestjs/axios';
 
 @Injectable({})
@@ -164,26 +166,38 @@ export class AuthService {
     }
   }
 
-  async refreshToken(userId: string, rt: string) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
+  // async refreshTokens(userId: string, refresh_token: string) {
+  //   try {
+  //     const user = await this.prisma.user.findUnique({
+  //       where: {
+  //         id: userId,
+  //       },
+  //     });
 
-    if (!user)
-      throw new ForbiddenException('Access denied: token hash does not match');
+  //     if (!user)
+  //       throw new ForbiddenException(
+  //         `Access Denied: User with id ${userId} is not found`,
+  //       );
 
-    if (user.hashedRt) {
-      const matchHash = await argon.verify(rt, user.hashedRt);
-      if (!matchHash)
-        throw new ForbiddenException('Access denied: hash does not match');
-    }
+  //     const cachedTokens = await this.getCachedTokens(user.id, user.email);
 
-    const tokens = await this.signToken(userId, user.email);
-    // await this.updateRtHash(user.id, tokens.refresh_token);
-    return tokens;
-  }
+  //     // const isCachedATValid = await this.isAccessTokenValid(
+  //     //   cachedTokens.access_token,
+  //     // );
+
+  //     // if (!cachedTokens) {
+  //     // }
+
+  //     console.log({ cachedTokens });
+  //   } catch (err) {
+  //     throw err;
+  //   }
+
+  //   //take a userId fro the redis and verify that both userId matches
+  //   //generate a new pair of tokens
+  //   //save them to redis cache
+  //   //return new signed tokens
+  // }
 
   async getCachedTokens(userId: string, email: string) {
     const tokens = await this.signToken(userId, email);
@@ -195,7 +209,7 @@ export class AuthService {
 
       if (cachedStrTokens) {
         const cachedTokens: Tokens = JSON.parse(cachedStrTokens);
-        console.log({ cachedTokens });
+        // console.log({ cachedTokens });
         return cachedTokens;
       } else {
         throw new Error('No tokens found in cache');
@@ -210,7 +224,23 @@ export class AuthService {
     }
   }
 
-  private isAccessTokenValid(access_token: string): boolean {
+  async getRedisKey(userId: string): Promise<string[]> {
+    const client = (this.cacheService.store as any).client as ReturnType<
+      typeof createClient
+    >;
+
+    return new Promise<string[]>((resolve, reject) => {
+      client.keys(userId, (err, keys) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(keys);
+        }
+      });
+    });
+  }
+
+  async isAccessTokenValid(access_token: string): Promise<boolean> {
     const decodedAT = this.jwt.decode(access_token) as { exp: number };
     const currentTime = Math.floor(Date.now() / 1000);
 
@@ -219,7 +249,47 @@ export class AuthService {
     return tokenExpiration > currentTime;
   }
 
-  private rotateTokens() {}
+  private async rotateTokens(
+    userId: string,
+    refresh_token: string,
+  ): Promise<Tokens> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      // const redisUserId = await this.getRedisKey(userId);
+      const cachedTokens = await this.getCachedTokens(user.id, user.email);
+      const isCachedATValid = await this.isAccessTokenValid(
+        cachedTokens.access_token,
+      );
+      if (isCachedATValid) return cachedTokens;
+
+      const newTokens = await this.signToken(user.id, user.email);
+      await this.cacheService.set(userId, JSON.stringify(newTokens));
+
+      // return {
+      //   access_token: newTokens.access_token,
+      //   refresh_token: newTokens.refresh_token,
+      // };
+
+      return newTokens;
+      // if (redisUserId === userId) {
+      // }
+      // const newTokens = await this.refreshTokens(userId, refresh_token);
+
+      // return newTokens;
+
+      //take a userId fro the redis and verify that both userId matches
+      //generate a new pair of tokens
+      //save them to redis cache
+      //return new signed tokens
+    } catch (err) {
+      throw err;
+    }
+  }
 
   async signToken(
     userId: string,
@@ -285,51 +355,51 @@ export class AuthService {
   }
 
   async checkUserAuth(headers: Record<string, string>): Promise<boolean> {
-    const token = headers.cookie['access_token'];
-    // console.log(headers);
-    if (!token) {
-      return false;
-    }
-    console.log({ headers });
-    // const extractedToken = token.split(' ')[1];
-
     try {
-      const SECRET = this.config.get('JWT_SECRET');
-      const verifyOptions: JwtVerifyOptions = {
-        secret: SECRET,
-      };
+      const authToken = headers['authorization'];
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const decodedToken = this.jwt.verify(token, verifyOptions);
-
-      return true;
-    } catch (err) {
-      console.log(err);
-
-      if (err.name === 'TokenExpiredError') {
-        console.log('Token expired');
-        const rt = headers.cookie['refresh_token'];
-        // const hash = await argon.hash(rt);
-        if (rt) {
-          const user = await this.prisma.user.findFirst({
-            where: {
-              id: headers.cookie['userId'],
-            },
-          });
-
-          try {
-            if (user.hashedRt !== rt) {
-              throw new Error('Access denied, rt do not match');
-            }
-
-            return true;
-          } catch (refreshErr) {
-            console.log({ refreshErr });
-          }
-        }
+      if (!authToken) {
+        return false; // No authorization token found
       }
 
-      return false;
+      // Decode the access token to check its expiration
+      const decodedAT = this.jwt.decode(authToken) as {
+        sub: string;
+        exp: number;
+      };
+
+      if (!decodedAT || this.isTokenExpired(decodedAT.exp)) {
+        // Access token is missing or expired
+        const refreshToken = headers['refresh_token'];
+
+        if (!refreshToken) {
+          return false; // No refresh token found
+        }
+
+        const userId = decodedAT.sub; // Extract user ID from the decoded access token
+
+        // Refresh tokens and update the cookies
+        const newTokens = await this.rotateTokens(userId, refreshToken);
+
+        // Set the new tokens in the response headers (replace 'res' with your response object)
+        // res.setHeader('access_token', newTokens.access_token);
+        // res.setHeader('refresh_token', newTokens.refresh_token);
+
+        // Update the cache with the new tokens
+        await this.cacheService.set(userId, JSON.stringify(newTokens));
+
+        return true; // User is authenticated with refreshed tokens
+      }
+
+      return true; // User is authenticated with valid tokens
+    } catch (err) {
+      console.error(err); // Log the error for debugging
+      return false; // An error occurred during authentication
     }
+  }
+
+  private isTokenExpired(expiration: number): boolean {
+    const currentTime = Math.floor(Date.now() / 1000);
+    return expiration < currentTime;
   }
 }
