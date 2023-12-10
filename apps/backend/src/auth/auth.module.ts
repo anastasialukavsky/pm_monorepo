@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport';
 import { UserModule } from 'src/user/user.module';
 import { LocalStrategy } from './startegy/local.strategy';
 import { SessionSerializer } from './decorators/session/session.serializer';
+// import { AuthMiddleware } from './middleware';
 // import { UserService } from 'src/user/user.service';
 
 @Module({
@@ -24,6 +25,7 @@ import { SessionSerializer } from './decorators/session/session.serializer';
     LocalStrategy,
     GoogleStrategy,
     SessionSerializer,
+    // AuthMiddleware,
   ],
 })
 export class AuthModule {}
