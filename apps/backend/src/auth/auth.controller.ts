@@ -144,15 +144,11 @@ export class AuthController {
   }
 
   @Get('authentication-check')
-  async getUserAuthStatus(
-    @Req() request: Request,
-    // @Headers('authorization') authorization: string,
-    // @Headers('cookie') cookie: string,
-  ) {
+  async getUserAuthStatus(@Req() request: Request) {
     try {
       const isAuthenticated = await this.authService.checkUserAuth({
-        // authorization,
-        cookie: request.cookies,
+        authorization: request.headers['authorization'] as string,
+        refresh_token: request.cookies['refresh_token'],
       });
       return { authenticated: isAuthenticated };
     } catch (err) {
