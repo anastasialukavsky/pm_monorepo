@@ -253,6 +253,7 @@ export class AuthService {
     userId: string,
     refresh_token: string,
   ): Promise<Tokens> {
+    const REFRESH_SECRET = this.config.get('REFRESH_JWT_SECRET');
     try {
       const user = await this.prisma.user.findUnique({
         where: {
@@ -260,12 +261,18 @@ export class AuthService {
         },
       });
 
+      if (!user)
+        throw new ForbiddenException('Access Denied, user does not exist');
       // const redisUserId = await this.getRedisKey(userId);
       const cachedTokens = await this.getCachedTokens(user.id, user.email);
       const isCachedATValid = await this.isAccessTokenValid(
         cachedTokens.access_token,
       );
+
       if (isCachedATValid) return cachedTokens;
+      const rtMatches = await this.jwt.verify(refresh_token, REFRESH_SECRET);
+
+      if (!rtMatches) throw new ForbiddenException('Access Denied');
 
       const newTokens = await this.signToken(user.id, user.email);
       await this.cacheService.set(userId, JSON.stringify(newTokens));
@@ -358,43 +365,48 @@ export class AuthService {
     try {
       const authToken = headers['authorization'];
 
-      if (!authToken) {
-        return false; // No authorization token found
+      console.log({ headers });
+      console.log({ authToken });
+      if (!authToken || !authToken.startsWith('Bearer ')) {
+        console.error('No or invalid authorization token found');
+        return false;
       }
 
-      // Decode the access token to check its expiration
-      const decodedAT = this.jwt.decode(authToken) as {
+      const tokenWithoutBearer = authToken.substring('Bearer '.length);
+
+      const decodedAT = this.jwt.decode(tokenWithoutBearer) as {
         sub: string;
         exp: number;
       };
 
+      console.log('Decoded Access Token:', decodedAT);
+
       if (!decodedAT || this.isTokenExpired(decodedAT.exp)) {
-        // Access token is missing or expired
         const refreshToken = headers['refresh_token'];
 
         if (!refreshToken) {
-          return false; // No refresh token found
+          console.error('No refresh token found');
+          return false;
         }
 
-        const userId = decodedAT.sub; // Extract user ID from the decoded access token
+        const userId = decodedAT.sub;
 
-        // Refresh tokens and update the cookies
+        console.log('Refreshing tokens for user:', userId);
+
         const newTokens = await this.rotateTokens(userId, refreshToken);
 
-        // Set the new tokens in the response headers (replace 'res' with your response object)
-        // res.setHeader('access_token', newTokens.access_token);
-        // res.setHeader('refresh_token', newTokens.refresh_token);
-
-        // Update the cache with the new tokens
         await this.cacheService.set(userId, JSON.stringify(newTokens));
+
+        console.log('Tokens refreshed for user:', userId);
 
         return true; // User is authenticated with refreshed tokens
       }
 
+      console.log('User is authenticated with valid tokens');
       return true; // User is authenticated with valid tokens
     } catch (err) {
-      console.error(err); // Log the error for debugging
-      return false; // An error occurred during authentication
+      console.error('Error during authentication:', err);
+      return false;
     }
   }
 
