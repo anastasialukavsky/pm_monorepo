@@ -80,11 +80,48 @@ export default function Page() {
       }
     }
   };
+const getCookie = (name:string) => {
+  const cookies = document.cookie.split(';');
+  for (const cookie in cookies) {
+    const [cookieName, cookieValue] = cookie.trim().split('=');
+    if(cookieName === name) {
+      return decodeURIComponent(cookieValue)
+    }
+  }
+}
+  const getTokens = async() => {
+    try {
+      const userId = getCookie('user_id');
+      if(!userId) {
+        console.error(`UserId ${userId} is not found`);
+        return;
+      }
+
+      const response = await axios.get(`${HTTP_ENDPOINT}/auth/get-tokens/${userId}`, {withCredentials: true});
+
+      const {access_token, refresh_token} = response.data;
+
+      const headers = {
+        Authorization: `Bearer ${access_token}`
+      } 
+
+      return headers;
+    } catch(err) {
+        console.error('Error getting tokens: ', err)
+        throw err;
+      }
+  }
+
 
   const submitData = async (data: LoginFormData) => {
     try {
+      const headers = await getTokens()
       const payload = await axios.post(`${HTTP_ENDPOINT}/auth/login`, data, {
         withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
+        }
       });
 
       console.log({ payload });
