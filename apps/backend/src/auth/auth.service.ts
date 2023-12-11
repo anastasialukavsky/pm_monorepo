@@ -224,6 +224,24 @@ export class AuthService {
     }
   }
 
+  async getUserCachedTokens(userId: string): Promise<Tokens | null> {
+    try {
+      const cachedTokensStr: string | null =
+        await this.cacheService.get(userId);
+      if (!cachedTokensStr) {
+        console.error(`No tokens for userId ${userId} found in cache`);
+        return null;
+      }
+
+      const cachedTokens: Tokens = JSON.parse(cachedTokensStr);
+
+      return cachedTokens;
+    } catch (err) {
+      console.error('Error retrieving tokens from cache: ', err);
+      return null;
+    }
+  }
+
   async getRedisKey(userId: string): Promise<string[]> {
     const client = (this.cacheService.store as any).client as ReturnType<
       typeof createClient
