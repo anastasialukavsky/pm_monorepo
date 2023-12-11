@@ -19,6 +19,7 @@ import { GetUser } from './decorators';
 // import { GetUserId } from './decorators/get-user-id.decorator';
 
 import { Response } from 'express';
+import { Tokens } from './types/index';
 
 //*POST /api/auth/signup
 @Controller('auth')
@@ -153,6 +154,20 @@ export class AuthController {
       return { authenticated: isAuthenticated };
     } catch (err) {
       throw err;
+    }
+  }
+
+  @Get('get-tokens/:userId')
+  async getTokens(@Param('userId') userId: string): Promise<Tokens | null> {
+    try {
+      const tokens = await this.authService.getUserCachedTokens(userId);
+
+      if (!tokens) {
+        console.error('No tokens found');
+      }
+      return tokens;
+    } catch (err) {
+      console.error('Error getting tokens: ', err);
     }
   }
 }
