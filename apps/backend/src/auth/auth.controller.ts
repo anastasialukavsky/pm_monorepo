@@ -14,7 +14,7 @@ import {
 import { AuthService } from './auth.service';
 import { AuthDto, LoginDto } from './dto';
 import { Request } from 'express';
-import { GoogleGuard, JwtGuard, LocalAuthGuard, RtGuard } from './guard';
+import { GoogleGuard, JwtGuard, LocalAuthGuard } from './guard';
 import { GetUser } from './decorators';
 // import { GetUserId } from './decorators/get-user-id.decorator';
 
