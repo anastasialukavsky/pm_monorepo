@@ -17,6 +17,7 @@ import { useShowPassword } from '../../../app/_hooks/index';
 import Input from '../../../app/_reusable_components/Input';
 import Label from '../../../app/_reusable_components/Label';
 import { ZodError, z } from 'zod';
+import { cookies } from 'next/headers';
 
 const HTTP_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
 
@@ -80,48 +81,54 @@ export default function Page() {
       }
     }
   };
-const getCookie = (name:string) => {
-  const cookies = document.cookie.split(';');
-  for (const cookie in cookies) {
-    const [cookieName, cookieValue] = cookie.trim().split('=');
-    if(cookieName === name) {
-      return decodeURIComponent(cookieValue)
+  const getCookie = (name: string) => {
+    // const cookies = document.cookie
+    const cookies = document;
+    // const cookie = cookies();
+    console.log({ cookies });
+    for (const cookie in cookies) {
+      const [cookieName, cookieValue] = cookie.trim().split('=');
+      if (cookieName === name) {
+        return decodeURIComponent(cookieValue);
+      }
     }
-  }
-}
-  const getTokens = async() => {
+    return null;
+  };
+  const getTokens = async () => {
     try {
       const userId = getCookie('user_id');
-      if(!userId) {
+      if (!userId) {
         console.error(`UserId ${userId} is not found`);
         return;
       }
 
-      const response = await axios.get(`${HTTP_ENDPOINT}/auth/get-tokens/${userId}`, {withCredentials: true});
+      const response = await axios.get(
+        `${HTTP_ENDPOINT}/auth/get-tokens/${userId}`,
+        { withCredentials: true }
+      );
 
-      const {access_token, refresh_token} = response.data;
+      const { access_token, refresh_token } = response.data;
 
       const headers = {
-        Authorization: `Bearer ${access_token}`
-      } 
+        Authorization: `Bearer ${access_token}`,
+      };
 
       return headers;
-    } catch(err) {
-        console.error('Error getting tokens: ', err)
-        throw err;
-      }
-  }
-
+    } catch (err) {
+      console.error('Error getting tokens: ', err);
+      throw err;
+    }
+  };
 
   const submitData = async (data: LoginFormData) => {
     try {
-      const headers = await getTokens()
+      const headers = await getTokens();
       const payload = await axios.post(`${HTTP_ENDPOINT}/auth/login`, data, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
-          ...headers
-        }
+          ...headers,
+        },
       });
 
       console.log({ payload });
