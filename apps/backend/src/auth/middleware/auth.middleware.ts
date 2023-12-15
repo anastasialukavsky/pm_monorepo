@@ -60,11 +60,13 @@ export class AuthMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const authToken = req.headers['authorization'];
     console.log('hello from middleware');
-    if (!authToken) {
-      return res
-        .status(401)
-        .json({ message: 'Unauthorized - Missing Authorization Header' });
-    }
+    // if (!authToken) {
+    //   return res
+    //     .status(401)
+    //     .json({ message: 'Unauthorized - Missing Authorization Header' });
+    // } else {
+    console.log('REQUSR', req.user);
+    return req.user;
 
     next();
   }
