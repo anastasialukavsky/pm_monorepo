@@ -45,6 +45,8 @@ import { createClient } from 'redis';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware).forRoutes('authentication-check');
+    consumer
+      .apply(AuthMiddleware)
+      .forRoutes('/authentication-check', 'auth/login');
   }
 }
