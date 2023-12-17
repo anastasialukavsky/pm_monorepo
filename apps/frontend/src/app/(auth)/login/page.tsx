@@ -18,6 +18,7 @@ import Input from '../../../app/_reusable_components/Input';
 import Label from '../../../app/_reusable_components/Label';
 import { ZodError, z } from 'zod';
 import { cookies } from 'next/headers';
+import Cookies from 'js-cookie';
 
 const HTTP_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
 
@@ -81,55 +82,65 @@ export default function Page() {
       }
     }
   };
-  const getCookie = (name: string) => {
-    // const cookies = document.cookie
-    const cookies = document;
-    // const cookie = cookies();
-    console.log({ cookies });
-    for (const cookie in cookies) {
-      const [cookieName, cookieValue] = cookie.trim().split('=');
-      if (cookieName === name) {
-        return decodeURIComponent(cookieValue);
-      }
-    }
-    return null;
-  };
-  const getTokens = async () => {
-    try {
-      const userId = getCookie('user_id');
-      if (!userId) {
-        console.error(`UserId ${userId} is not found`);
-        return;
-      }
+  // const getCookie = (name: string) => {
+  //   // const cookies = document.cookie
+  //   const cookies = document;
+  //   // const cookie = cookies();
+  //   // console.log({ cookies });
+  //   for (const cookie in cookies) {
+  //     const [cookieName, cookieValue] = cookie.trim().split('=');
+  //     if (cookieName === name) {
+  //       return decodeURIComponent(cookieValue);
+  //     }
+  //   }
+  //   return null;
+  // };
 
-      const response = await axios.get(
-        `${HTTP_ENDPOINT}/auth/get-tokens/${userId}`,
-        { withCredentials: true }
-      );
+  // const getCookie = (name: string) => {
+  //   const cookie = Cookies.get(name);
+  //   return cookie ? decodeURIComponent(cookie) : null;
+  // };
 
-      const { access_token, refresh_token } = response.data;
+  // const getTokens = async () => {
+  //   try {
+  //     const userId = getCookie('userId');
+  //     console.log({ 'login frontend userID': userId });
+  //     if (!userId) {
+  //       console.error(`UserId ${userId} is not found`);
+  //       return;
+  //     }
 
-      const headers = {
-        Authorization: `Bearer ${access_token}`,
-      };
+  //     const response = await axios.get(
+  //       `${HTTP_ENDPOINT}/auth/get-tokens/${userId}`,
+  //       { withCredentials: true }
+  //     );
 
-      return headers;
-    } catch (err) {
-      console.error('Error getting tokens: ', err);
-      throw err;
-    }
-  };
+  //     // console.log({ response });
+  //     const { access_token, refresh_token } = response.data;
+
+  //     const headers = {
+  //       Authorization: `Bearer ${access_token}`,
+  //     };
+
+  //     return headers;
+  //   } catch (err) {
+  //     console.error('Error getting tokens: ', err);
+  //     throw err;
+  //   }
+  // };
+
 
   const submitData = async (data: LoginFormData) => {
     try {
-      const headers = await getTokens();
+      // const headers = await getTokens();
       const payload = await axios.post(`${HTTP_ENDPOINT}/auth/login`, data, {
         withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
-      });
+        // headers: {
+        //   'Content-Type': 'application/json',
+        //   // ...headers,
+        // },
+      }
+      );
 
       console.log({ payload });
 
