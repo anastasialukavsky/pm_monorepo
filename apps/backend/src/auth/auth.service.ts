@@ -89,7 +89,7 @@ export class AuthService {
       // }
       // console.log(cacheTokens);
       const tokens = await this.signToken(user.id, user.email);
-      //saving at and rt into  a cache storage forfuture use
+      //saving at and rt into  a cache storage for future use
       await this.cacheService.set(user.id, tokens);
 
       console.log('Login process completed');
@@ -379,15 +379,15 @@ export class AuthService {
     }
   }
 
-  async checkUserAuth(headers: Record<string, string>): Promise<boolean> {
+  async checkUserAuth(headers: Record<string, string>): Promise<string | null> {
     try {
       const authToken = headers['authorization'];
 
       console.log({ headers });
       console.log({ authToken });
       if (!authToken || !authToken.startsWith('Bearer ')) {
-        console.error('No or invalid authorization token found');
-        return false;
+        console.error('Access denied -authorization token not found');
+        return null;
       }
 
       const tokenWithoutBearer = authToken.substring('Bearer '.length);
@@ -404,7 +404,7 @@ export class AuthService {
 
         if (!refreshToken) {
           console.error('No refresh token found');
-          return false;
+          return null;
         }
 
         const userId = decodedAT.sub;
@@ -417,14 +417,14 @@ export class AuthService {
 
         console.log('Tokens refreshed for user:', userId);
 
-        return true; // User is authenticated with refreshed tokens
+        return userId; // User is authenticated with refreshed tokens
       }
 
       console.log('User is authenticated with valid tokens');
-      return true; // User is authenticated with valid tokens
+      return decodedAT.sub; // User is authenticated with valid tokens
     } catch (err) {
       console.error('Error during authentication:', err);
-      return false;
+      return null;
     }
   }
 
