@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -9,6 +10,7 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -125,28 +127,20 @@ export class AuthController {
   //   return this.authService.refreshToken(userId, refreshToken);
   // }
 
-  @Get('verify-email/:email')
-  async getUserEmail(@Param('email') email: string, @Res() res: Response) {
+  @Get('authentication-check/:userId')
+  async getUserAuthStatus(
+    @Req() request: Request,
+    @Param('userId') userId: string,
+  ) {
     try {
-      const emailLookup = await this.authService.getUserEmail(email);
+      // const userId = request.params;
+      console.log('userId from auth controller', userId);
 
-      if (emailLookup.status === 200) {
-        return res
-          .status(HttpStatus.OK)
-          .json({ message: emailLookup.message, status: emailLookup.status });
-      } else if (emailLookup.status === 404) {
-        return res
-          .status(HttpStatus.NOT_FOUND)
-          .json({ message: emailLookup.message, status: emailLookup.status });
-      }
-    } catch (err) {
-      throw err;
-    }
-  }
+      if (userId !== request.cookies.sub)
+        throw new UnauthorizedException(
+          'Access denied - userID does not match',
+        );
 
-  @Get('authentication-check')
-  async getUserAuthStatus(@Req() request: Request) {
-    try {
       const isAuthenticated = await this.authService.checkUserAuth({
         authorization: request.headers['authorization'] as string,
         refresh_token: request.cookies['refresh_token'],
@@ -168,6 +162,25 @@ export class AuthController {
       return tokens;
     } catch (err) {
       console.error('Error getting tokens: ', err);
+    }
+  }
+
+  @Get('verify-email/:email')
+  async getUserEmail(@Param('email') email: string, @Res() res: Response) {
+    try {
+      const emailLookup = await this.authService.getUserEmail(email);
+
+      if (emailLookup.status === 200) {
+        return res
+          .status(HttpStatus.OK)
+          .json({ message: emailLookup.message, status: emailLookup.status });
+      } else if (emailLookup.status === 404) {
+        return res
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: emailLookup.message, status: emailLookup.status });
+      }
+    } catch (err) {
+      throw err;
     }
   }
 }
