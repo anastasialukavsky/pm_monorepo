@@ -1,9 +1,10 @@
 'use client';
 import { Truculenta } from 'next/font/google';
 import { usePathname } from 'next/navigation';
-import React, { ElementRef, useRef, useState } from 'react';
+import React, { ElementRef, useContext, useRef, useState } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import UserItem from './UserItem';
+import { AuthContext } from '@/app/_store/authContext';
 // import {cn} from '@/lib/utils'
 
 export default function Navigation() {
@@ -15,6 +16,7 @@ export default function Navigation() {
   const navbarRef = useRef<ElementRef<'div'>>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isMobile);
+  const authContext = useContext(AuthContext)
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     e.preventDefault();
@@ -68,6 +70,7 @@ export default function Navigation() {
           isResetting && 'transition-all ease-in-out duration-300'
         } `}
       >
+        <article>{authContext.user.firstName}</article>
         <article><UserItem/></article>
         <article>Documents</article>
         <div
