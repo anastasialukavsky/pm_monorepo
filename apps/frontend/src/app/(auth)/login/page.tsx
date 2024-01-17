@@ -19,11 +19,15 @@ import Label from '../../../app/_reusable_components/Label';
 import { ZodError, z } from 'zod';
 import { cookies } from 'next/headers';
 import Cookies from 'js-cookie';
+import { AuthContext } from '@/app/_store/authContext';
+import { useContext } from 'react';
 
 const HTTP_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
 
 export default function Page() {
   const router = useRouter();
+  const { user, isLoggedIn, setIsLoggedIn, setUser, isLoading, setIsLoading } =
+    useContext(AuthContext);
   const { togglePasswordVisibility, showPassword } = useShowPassword();
 
   const {
@@ -83,8 +87,6 @@ export default function Page() {
     }
   };
 
-
-
   const submitData = async (data: LoginFormData) => {
     try {
       // const headers = await getTokens();
@@ -94,12 +96,14 @@ export default function Page() {
         //   'Content-Type': 'application/json',
         //   // ...headers,
         // },
-      }
-      );
+      });
 
       console.log({ payload });
+      setUser(payload.data.user);
+      setIsLoading(false);
 
       if (payload.status === 200) router.push('/workspace');
+      setIsLoggedIn(true);
       return payload;
     } catch (err) {
       if (err instanceof AxiosError) {
