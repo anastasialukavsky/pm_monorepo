@@ -95,10 +95,10 @@ export class AuthService {
       console.log('Login process completed');
 
       return {
-        id: user.id,
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         user: {
+          userId: user.id,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
