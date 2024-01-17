@@ -82,10 +82,9 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto, @Res() res: Response) {
     const {
-      id,
       access_token,
       refresh_token,
-      user: { firstName, lastName, email },
+      user: { userId, firstName, lastName, email },
     } = await this.authService.login(dto);
 
     res
@@ -97,17 +96,16 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development',
       })
-      .cookie('userId', id, {
+      .cookie('userId', userId, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'development',
       })
       .send({
         message: 'User successfully logged in',
-        userId: id,
-        user: { firstName, lastName, email },
+        user: { userId, firstName, lastName, email },
       });
 
-    return { id };
+    return { userId };
   }
 
   @UseGuards(JwtGuard)
