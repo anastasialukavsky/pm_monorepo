@@ -16,11 +16,14 @@ import axios from 'axios';
 import { ZodError, z } from 'zod';
 import { emailCheck } from '../../../../_utilHelpers';
 import { isValidPassword } from '../../../../_utilHelpers';
+import { useAppDispatch } from '../../_redux/redux_hooks';
+import { requestSignUp } from '../../_redux/slices/authSlice';
 
 const HTTP_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
 
 export default function Page() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { showPassword, togglePasswordVisibility } = useShowPassword();
   const {
     showPassword: showConfirmPassword,
@@ -78,7 +81,7 @@ export default function Page() {
   //   // }
   // }, [errors]);
 
-  console.log({ errors });
+  // console.log({ errors });
   useEffect(() => {
     if (errors.confirmPassword) {
       reset({
@@ -123,20 +126,24 @@ export default function Page() {
     }
   };
 
-  const submitData = async (data: SignUpFormData) => {
-    try {
-      const payload = await axios.post(`${HTTP_ENDPOINT}/auth/signup`, data, {
-        withCredentials: true,
-      });
+  // const submitData = async (data: SignUpFormData) => {
+  //   try {
+  //     const payload = await axios.post(`${HTTP_ENDPOINT}/auth/signup`, data, {
+  //       withCredentials: true,
+  //     });
 
-      console.log({ payload });
+  //     // console.log({ payload });
 
-      if (payload.status === 201) router.push('/workspace');
-      return payload;
-    } catch (err) {
-      console.log(err);
-      throw err;
-    }
+  //     if (payload.status === 201) router.push('/workspace');
+  //     return payload;
+  //   } catch (err) {
+  //     console.log(err);
+  //     throw err;
+  //   }
+  // };
+
+  const submitData = (data: SignUpFormData) => {
+    dispatch(requestSignUp(data));
   };
 
   return (
