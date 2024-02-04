@@ -1,3 +1,5 @@
+'use client'
+
 import { ZodType, z } from 'zod';
 import { LoginFormData, SignUpFormData } from './_types';
 
