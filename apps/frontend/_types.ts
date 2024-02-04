@@ -1,3 +1,4 @@
+'use client'
 export type LoginFormData = {
   email: string;
   password: string;
@@ -10,3 +11,4 @@ export type SignUpFormData = {
   password: string;
   confirmPassword: string;
 };
+
