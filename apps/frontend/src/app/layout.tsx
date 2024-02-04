@@ -1,3 +1,4 @@
+// 'use client'
 /* eslint-disable @next/next/no-sync-scripts */
 
 /* eslint-disable react/jsx-no-comment-textnodes */
@@ -8,7 +9,8 @@ import React, { useContext } from 'react';
 import Navbar from './(marketing)/_components/Navbar';
 import ThemeProvider from './_providers/ThemeProvider';
 import { AuthContext, AuthContextProvider } from './_store/authContext';
-import Providers from './_store/providers';
+import { store } from './_redux/store';
+import { Provider } from 'react-redux';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,20 +30,22 @@ export default function RootLayout({
     <html lang='en' suppressHydrationWarning>
       <head></head>
       <body className={`${inter.className}`}>
-        <AuthContextProvider>
-          <Navbar />
-          <main>
-            <ThemeProvider
-              attribute='class'
-              defaultTheme='light'
-              enableSystem
-              disableTransitionOnChange
-              storageKey='task-tide'
-            >
-              {children}
-            </ThemeProvider>
-          </main>
-        </AuthContextProvider>
+        {/* <AuthContextProvider> */}
+        {/* <Provider store={store}> */}
+        <Navbar />
+        <main>
+          <ThemeProvider
+            attribute='class'
+            defaultTheme='light'
+            enableSystem
+            disableTransitionOnChange
+            storageKey='task-tide'
+          >
+            {children}
+          </ThemeProvider>
+        </main>
+        {/* </Provider> */}
+        {/* </AuthContextProvider> */}
       </body>
     </html>
   );
