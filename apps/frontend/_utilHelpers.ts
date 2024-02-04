@@ -1,3 +1,4 @@
+'use client'
 import axios from 'axios';
 import { zodPasswordSchema } from './_zodTypes';
 import { ZodError } from 'zod';
