@@ -1,3 +1,4 @@
+'use client'
 import React from 'react';
 import { Archivo_Black } from 'next/font/google';
 
