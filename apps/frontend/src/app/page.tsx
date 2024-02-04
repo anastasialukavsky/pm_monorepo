@@ -4,6 +4,8 @@ import Link from 'next/link';
 import React, { useContext, useEffect } from 'react';
 import Heading from './(marketing)/Heading';
 import { AuthContext, AuthContextProvider } from './_store/authContext';
+import { Provider } from 'react-redux';
+import { store } from '@/app/_redux/store';
 
 // import { useRouter } from 'next/router';
 
@@ -26,7 +28,8 @@ export default function Home() {
 
   return (
     <div className='w-[100vw] h-[100vh] '>
-      {/* <AuthContextProvider> */}
+      <Provider store={store}>
+        {/* <AuthContextProvider> */}
         <Heading />
 
         <Link
@@ -42,7 +45,8 @@ export default function Home() {
         >
           join
         </Link>
-      {/* </AuthContextProvider> */}
+        {/* </AuthContextProvider> */}
+      </Provider>
     </div>
   );
 }
